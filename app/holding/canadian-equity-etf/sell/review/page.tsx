@@ -5,93 +5,15 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import Button from "@/components/Button";
+import EngagedModal from "@/components/EngagedModal";
 import { DEMO_PORTFOLIO } from "@/lib/demo-data";
 import { useAgentContext } from "@/lib/agent-context";
-
-function EngagedModal({ qty, onDismiss }: { qty: number; onDismiss: () => void }) {
-  return (
-    <div
-      style={{
-        position: "fixed", inset: 0,
-        backgroundColor: "rgba(30, 26, 22, 0.6)",
-        backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "flex-end", justifyContent: "center",
-        zIndex: 1000,
-        padding: "0 0 0",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#EDECEA",
-          borderRadius: "20px 20px 0 0",
-          padding: "28px 24px 48px",
-          width: "100%",
-          maxWidth: 430,
-        }}
-      >
-        <div
-          style={{
-            width: 36, height: 4, borderRadius: 2,
-            backgroundColor: "#C5BFBA",
-            margin: "0 auto 28px",
-          }}
-        />
-        <h2
-          style={{
-            fontFamily: "var(--font-fraunces), Georgia, serif",
-            fontSize: 22,
-            fontWeight: 700,
-            color: "#1E1A16",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.25,
-            marginBottom: 12,
-          }}
-        >
-          Before you confirm —
-        </h2>
-        <p
-          style={{
-            fontFamily: "var(--font-geist), system-ui, sans-serif",
-            fontSize: 14,
-            color: "#908B83",
-            lineHeight: 1.6,
-            marginBottom: 28,
-          }}
-        >
-          You've started and paused this sale a few times today. Would you like a moment to think through your decision before locking in this loss?
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <Button
-            variant="ghost"
-            fullWidth
-            onClick={() => {
-              console.log("[agent] engaged modal: continue to confirm");
-              onDismiss();
-            }}
-          >
-            Continue to confirm
-          </Button>
-          <Button
-            variant="ghost"
-            fullWidth
-            onClick={() => {
-              console.log("[agent] engaged modal: dismissed");
-              onDismiss();
-            }}
-          >
-            Dismiss
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function SellReviewContent() {
   const searchParams = useSearchParams();
   const holding = DEMO_PORTFOLIO.holdings[0];
-  const { agentState, markSellFlowEntry } = useAgentContext();
-  const [modalDismissed, setModalDismissed] = useState(false);
+  const { agentState, markSellFlowEntry, dismissalsThisSession } = useAgentContext();
+  const [modalOpen, setModalOpen] = useState(false);
 
   const qty = Math.max(1, Math.min(parseInt(searchParams.get("qty") ?? "1", 10) || 1, holding.shares));
   const proceeds = qty * holding.currentPrice;
@@ -105,7 +27,17 @@ function SellReviewContent() {
     markSellFlowEntry(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const showModal = agentState === "engaged" && !modalDismissed;
+  // Open the modal when state reaches engaged, unless user has already dismissed twice
+  useEffect(() => {
+    if (agentState === "engaged") {
+      if (dismissalsThisSession >= 2) {
+        console.log("[agent] Engaged state reached — max dismissals hit, skipping modal");
+        return;
+      }
+      console.log("[agent] Engaged state reached");
+      setModalOpen(true);
+    }
+  }, [agentState, dismissalsThisSession]);
 
   return (
     <div style={{ minHeight: "100dvh", backgroundColor: "#EDECEA", display: "flex", flexDirection: "column", maxWidth: 430, margin: "0 auto" }}>
@@ -218,7 +150,7 @@ function SellReviewContent() {
         </Link>
       </div>
 
-      {showModal && <EngagedModal qty={qty} onDismiss={() => setModalDismissed(true)} />}
+      {modalOpen && <EngagedModal onClose={() => setModalOpen(false)} />}
     </div>
   );
 }

@@ -45,6 +45,8 @@ interface ContextState {
   sellFlowActive: boolean;
   saleConfirmed: boolean;
   hasVisitedPortfolio: boolean; // gates revisit counting (first visit doesn't count)
+  dismissalsThisSession: number;
+  lastBranch: string | null;
 }
 
 function makeInitialState(): ContextState {
@@ -54,6 +56,8 @@ function makeInitialState(): ContextState {
     sellFlowActive: false,
     saleConfirmed: false,
     hasVisitedPortfolio: false,
+    dismissalsThisSession: 0,
+    lastBranch: null,
   };
 }
 
@@ -65,6 +69,8 @@ type Action =
   | { type: "MARK_SELL_FLOW_ENTRY"; isReview: boolean }
   | { type: "CONFIRM_SALE" }
   | { type: "CHECK_SELL_FLOW_ABORT" }  // called when arriving at any non-sell route
+  | { type: "INCREMENT_DISMISSAL" }
+  | { type: "SET_LAST_BRANCH"; branch: string }
   | { type: "RESET" };
 
 function reeval(state: ContextState, signals: Partial<Signals>): ContextState {
@@ -127,6 +133,12 @@ function reducer(state: ContextState, action: Action): ContextState {
       };
     }
 
+    case "INCREMENT_DISMISSAL":
+      return { ...state, dismissalsThisSession: state.dismissalsThisSession + 1 };
+
+    case "SET_LAST_BRANCH":
+      return { ...state, lastBranch: action.branch };
+
     case "RESET":
       return makeInitialState();
 
@@ -144,12 +156,16 @@ interface AgentContextValue {
   signals: Signals;
   gating: typeof GATING;
   thresholds: typeof THRESHOLDS;
+  dismissalsThisSession: number;
+  lastBranch: string | null;
   // What screens call
   incrementDwell: () => void;
   markPortfolioVisit: () => void;
   markSellFlowEntry: (isReview: boolean) => void;
   confirmSale: () => void;
   checkSellFlowAbort: () => void;
+  incrementDismissal: () => void;
+  setLastBranch: (branch: string) => void;
   reset: () => void;
 }
 
@@ -164,6 +180,9 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "MARK_SELL_FLOW_ENTRY", isReview }), []);
   const confirmSale       = useCallback(() => dispatch({ type: "CONFIRM_SALE" }), []);
   const checkSellFlowAbort = useCallback(() => dispatch({ type: "CHECK_SELL_FLOW_ABORT" }), []);
+  const incrementDismissal = useCallback(() => dispatch({ type: "INCREMENT_DISMISSAL" }), []);
+  const setLastBranch     = useCallback((branch: string) =>
+    dispatch({ type: "SET_LAST_BRANCH", branch }), []);
   const reset             = useCallback(() => dispatch({ type: "RESET" }), []);
 
   return (
@@ -173,11 +192,15 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       signals: state.signals,
       gating: GATING,
       thresholds: THRESHOLDS,
+      dismissalsThisSession: state.dismissalsThisSession,
+      lastBranch: state.lastBranch,
       incrementDwell,
       markPortfolioVisit,
       markSellFlowEntry,
       confirmSale,
       checkSellFlowAbort,
+      incrementDismissal,
+      setLastBranch,
       reset,
     }}>
       {children}

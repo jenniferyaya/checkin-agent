@@ -36,7 +36,7 @@ function Bar({ label, value, max }: { label: string; value: number; max: number 
 
 export default function DebugPanel() {
   const [open, setOpen] = useState(true);
-  const { agentState, triggerConfidence, signals, gating, reset } = useAgentContext();
+  const { agentState, triggerConfidence, signals, gating, dismissalsThisSession, lastBranch, reset } = useAgentContext();
 
   if (!open) {
     return (
@@ -137,6 +137,18 @@ export default function DebugPanel() {
             {signals.isOnSellReview ? "true" : "false"}
           </span>
         </div>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={{ color: "#908B83" }}>dismissals</span>
+          <span style={{ color: dismissalsThisSession > 0 ? "#E8A838" : "#908B83" }}>
+            {dismissalsThisSession} / 2
+          </span>
+        </div>
+        {lastBranch && (
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ color: "#908B83" }}>lastBranch</span>
+            <span style={{ color: "#E2DED9" }}>{lastBranch}</span>
+          </div>
+        )}
       </div>
 
       {/* Reset */}
