@@ -1,8 +1,13 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
 import TickerIcon from "@/components/TickerIcon";
 import ChangeDisplay from "@/components/ChangeDisplay";
 import { DEMO_PORTFOLIO, DEMO_USER } from "@/lib/demo-data";
 import PortfolioChart from "./PortfolioChart";
+import { useAgentContext } from "@/lib/agent-context";
+import AmbientIndicator from "@/components/AmbientIndicator";
 
 const TICKER_COLORS: Record<string, string> = {
   XIC:  "#2B4A3A",
@@ -46,6 +51,15 @@ function ProfileIcon() {
 export default function PortfolioPage() {
   const p = DEMO_PORTFOLIO;
   const holding = p.holdings[0];
+  const { incrementDwell, markPortfolioVisit, checkSellFlowAbort } = useAgentContext();
+
+  useEffect(() => {
+    checkSellFlowAbort();
+    markPortfolioVisit();
+    const timer = setInterval(incrementDwell, 1000);
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const totalFormatted = p.totalValue.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const [totalWhole, totalCents] = totalFormatted.split(".");
@@ -55,17 +69,20 @@ export default function PortfolioPage() {
       {/* Header */}
       <header style={{ padding: "20px 20px 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span
-            style={{
-              fontFamily: "var(--font-fraunces), Georgia, serif",
-              fontStyle: "italic",
-              fontSize: 26,
-              fontWeight: 400,
-              color: "#1E1A16",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            folio
+          <span style={{ display: "flex", alignItems: "center" }}>
+            <span
+              style={{
+                fontFamily: "var(--font-fraunces), Georgia, serif",
+                fontStyle: "italic",
+                fontSize: 26,
+                fontWeight: 400,
+                color: "#1E1A16",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              folio
+            </span>
+            <AmbientIndicator />
           </span>
           <span
             style={{

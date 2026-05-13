@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { Fraunces } from "next/font/google";
 import "./globals.css";
+import { AgentProvider } from "@/lib/agent-context";
+import DebugPanel from "@/components/DebugPanel";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -26,7 +28,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geist.variable} ${fraunces.variable} antialiased`}>
-      <body>{children}</body>
+      <body>
+        <AgentProvider>
+          {children}
+          <DebugPanel />
+        </AgentProvider>
+      </body>
     </html>
   );
 }

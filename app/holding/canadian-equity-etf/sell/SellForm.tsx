@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/Button";
 import Link from "next/link";
+import { useAgentContext } from "@/lib/agent-context";
 
 interface SellFormProps {
   shares: number;
@@ -14,6 +15,8 @@ interface SellFormProps {
 export default function SellForm({ shares, currentPrice, ticker }: SellFormProps) {
   const [qty, setQty] = useState("");
   const router = useRouter();
+  const { markSellFlowEntry } = useAgentContext();
+  useEffect(() => { markSellFlowEntry(false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const parsed = parseInt(qty, 10);
   const valid = !isNaN(parsed) && parsed > 0 && parsed <= shares;

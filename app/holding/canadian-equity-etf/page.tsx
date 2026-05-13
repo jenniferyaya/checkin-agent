@@ -1,11 +1,17 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import TickerIcon from "@/components/TickerIcon";
 import ChangeDisplay from "@/components/ChangeDisplay";
 import Button from "@/components/Button";
 import { DEMO_PORTFOLIO } from "@/lib/demo-data";
+import { useAgentContext } from "@/lib/agent-context";
 
 export default function HoldingDetailPage() {
+  const { checkSellFlowAbort } = useAgentContext();
+  useEffect(() => { checkSellFlowAbort(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const holding = DEMO_PORTFOLIO.holdings[0];
   const totalCost = holding.costBasis * holding.shares;
 

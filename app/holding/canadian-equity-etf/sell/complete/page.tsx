@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DEMO_PORTFOLIO } from "@/lib/demo-data";
+import ConfirmSaleSignal from "./ConfirmSaleSignal";
 
 interface CompletePageProps {
   searchParams: Promise<{ qty?: string }>;
@@ -84,6 +85,7 @@ export default async function SaleCompletePage({ searchParams }: CompletePagePro
         Funds settle in 2 business days.
       </p>
 
+      <ConfirmSaleSignal />
       <Link
         href="/"
         style={{

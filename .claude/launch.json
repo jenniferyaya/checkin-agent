@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "check-in-agent",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["/Users/jennifalanga/Documents/GitHub/check-in-agent/.claude/worktrees/stoic-lehmann-c3754c/scripts/dev.sh"],
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}
