@@ -302,28 +302,21 @@ export default function EngagedModal({ onClose }: EngagedModalProps) {
         position: "fixed", inset: 0,
         backgroundColor: "rgba(30, 26, 22, 0.55)",
         backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "flex-end", justifyContent: "center",
+        display: "flex", alignItems: "center", justifyContent: "center",
         zIndex: 1000,
+        padding: "0 20px",
       }}
       onClick={(e) => { if (e.target === e.currentTarget) handleXClose(); }}
     >
       <div
         style={{
           backgroundColor: "#EDECEA",
-          borderRadius: "20px 20px 0 0",
-          padding: "20px 24px 44px",
+          borderRadius: 20,
+          padding: "20px 24px 36px",
           width: "100%",
-          maxWidth: 430,
+          maxWidth: 390,
         }}
       >
-        {/* Drag handle */}
-        <div
-          style={{
-            width: 36, height: 4, borderRadius: 2,
-            backgroundColor: "#C5BFBA",
-            margin: "0 auto 20px",
-          }}
-        />
 
         {/* ── Phase: articulation ── */}
         {phase === "articulation" && (
