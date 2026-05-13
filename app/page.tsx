@@ -5,7 +5,9 @@ import { DEMO_PORTFOLIO, DEMO_USER } from "@/lib/demo-data";
 import PortfolioChart from "./PortfolioChart";
 
 const TICKER_COLORS: Record<string, string> = {
-  XIC: "#2B4A3A",
+  XIC:  "#2B4A3A",
+  XEQT: "#2B4A3A",
+  ZAG:  "#2A3554",
 };
 
 function PortfolioIcon({ active }: { active?: boolean }) {
@@ -242,69 +244,79 @@ export default function PortfolioPage() {
               color: "#908B83",
             }}
           >
-            {p.holdings.length} {p.holdings.length === 1 ? "position" : "positions"}
+            {p.holdings.length} positions
           </span>
         </div>
 
         <div>
-          {p.holdings.map((h, i) => (
-            <div key={h.id}>
-              <Link href={`/holding/${h.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "14px 0",
-                  }}
-                >
-                  <TickerIcon ticker={h.ticker} bgColor={TICKER_COLORS[h.ticker] ?? "#2B4A3A"} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p
-                      style={{
-                        fontFamily: "var(--font-geist), system-ui, sans-serif",
-                        fontSize: 15,
-                        fontWeight: 600,
-                        color: "#1E1A16",
-                        marginBottom: 2,
-                      }}
-                    >
-                      {h.ticker}
-                    </p>
-                    <p
-                      style={{
-                        fontFamily: "var(--font-geist), system-ui, sans-serif",
-                        fontSize: 13,
-                        color: "#908B83",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h.name}
-                    </p>
-                  </div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <p
-                      style={{
-                        fontFamily: "var(--font-geist), system-ui, sans-serif",
-                        fontSize: 15,
-                        fontWeight: 500,
-                        color: "#1E1A16",
-                        marginBottom: 2,
-                      }}
-                    >
-                      ${h.currentValue.toLocaleString("en-CA", { minimumFractionDigits: 2 })}
-                    </p>
-                    <ChangeDisplay pct={h.dayChangePct} showArrow={false} size="sm" />
-                  </div>
+          {p.holdings.map((h, i) => {
+            const rowContent = (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "14px 0",
+                }}
+              >
+                <TickerIcon ticker={h.ticker} bgColor={TICKER_COLORS[h.ticker] ?? "#2B4A3A"} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p
+                    style={{
+                      fontFamily: "var(--font-geist), system-ui, sans-serif",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: "#1E1A16",
+                      marginBottom: 2,
+                    }}
+                  >
+                    {h.ticker}
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "var(--font-geist), system-ui, sans-serif",
+                      fontSize: 13,
+                      color: "#908B83",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {h.name}
+                  </p>
                 </div>
-              </Link>
-              {i < p.holdings.length - 1 && (
-                <hr style={{ border: "none", borderTop: "1px solid #E2DED9" }} />
-              )}
-            </div>
-          ))}
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <p
+                    style={{
+                      fontFamily: "var(--font-geist), system-ui, sans-serif",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      color: "#1E1A16",
+                      marginBottom: 2,
+                    }}
+                  >
+                    ${h.currentValue.toLocaleString("en-CA", { minimumFractionDigits: 2 })}
+                  </p>
+                  <ChangeDisplay pct={h.dayChangePct} showArrow={false} size="sm" />
+                </div>
+              </div>
+            );
+
+            return (
+              <div key={h.ticker}>
+                {h.id ? (
+                  <Link href={`/holding/${h.id}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+                    {rowContent}
+                  </Link>
+                ) : (
+                  rowContent
+                )}
+                {i < p.holdings.length - 1 && (
+                  <hr style={{ border: "none", borderTop: "1px solid #E2DED9" }} />
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 

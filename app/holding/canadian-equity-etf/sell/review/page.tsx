@@ -78,7 +78,7 @@ export default async function SellReviewPage({ searchParams }: ReviewPageProps) 
             backgroundColor: "#FFFFFF",
             borderRadius: 12,
             padding: "16px 20px",
-            borderLeft: "3px solid #B83535",
+            border: "1.5px solid #B83535",
           }}
         >
           <p
