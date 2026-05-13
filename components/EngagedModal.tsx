@@ -4,13 +4,22 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentContext } from "@/lib/agent-context";
 import { DEMO_PORTFOLIO, DEMO_USER } from "@/lib/demo-data";
+import { type DecisionLogEntry, type Branch, makeTriggerSummary } from "@/lib/decision-log";
+
+// ─── Dev logger (stripped in production builds) ───────────────────────────
+
+function devLog(...args: unknown[]) {
+  if (process.env.NODE_ENV === "development") {
+    console.log(...args);
+  }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
 type Phase = "articulation" | "loading" | "response";
 
 interface CheckInResponse {
-  branch: string;
+  branch: Branch;
   message: string;
   showHardshipResource: boolean;
   reasoning?: string;
@@ -129,11 +138,19 @@ interface EngagedModalProps {
 
 export default function EngagedModal({ onClose }: EngagedModalProps) {
   const router = useRouter();
-  const { dismissalsThisSession, incrementDismissal, setLastBranch } = useAgentContext();
+  const {
+    dismissalsThisSession,
+    signals,
+    incrementDismissal,
+    setLastBranch,
+    appendDecision,
+  } = useAgentContext();
+
   const [phase, setPhase] = useState<Phase>("articulation");
   const [customMode, setCustomMode] = useState(false);
   const [customText, setCustomText] = useState("");
   const [response, setResponse] = useState<CheckInResponse | null>(null);
+  const [submittedReason, setSubmittedReason] = useState<string | null>(null);
   const customInputRef = useRef<HTMLInputElement>(null);
 
   const holding = DEMO_PORTFOLIO.holdings[0];
@@ -142,12 +159,46 @@ export default function EngagedModal({ onClose }: EngagedModalProps) {
   const fmt = (n: number) =>
     n.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  console.log(`[agent] Articulation opened, dismissal count: ${dismissalsThisSession}`);
+  devLog(`[agent] Articulation opened, dismissal count: ${dismissalsThisSession}`);
+
+  // ── Decision log helpers ───────────────────────────────────────────────
+
+  function buildLogEntry(
+    userChoice: DecisionLogEntry["userChoice"],
+    apiResponse: CheckInResponse,
+    reason: string,
+  ): DecisionLogEntry {
+    return {
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+      triggerReason: {
+        sellFlowAborts: signals.sellFlowAbortCount,
+        dwellSeconds: signals.dwellSeconds,
+        portfolioRevisits: signals.portfolioRevisitCount,
+        summary: makeTriggerSummary(signals),
+      },
+      userReason: reason,
+      agentBranch: apiResponse.branch,
+      agentMessage: apiResponse.message,
+      agentReasoning: apiResponse.reasoning,
+      userChoice,
+      showHardshipResource: apiResponse.showHardshipResource,
+      portfolioSnapshot: {
+        dayChangePct: DEMO_PORTFOLIO.dayChangePct,
+        weekChangePct: DEMO_PORTFOLIO.weekChangePct,
+        holdingValue: holding.currentValue,
+        dollarLossLockedIn: holding.dollarLossIfSoldNow,
+      },
+    };
+  }
+
+  // ── API call ──────────────────────────────────────────────────────────
 
   async function submitReason(userReason: string) {
-    console.log(`[agent] User selected reason: "${userReason}"`);
+    devLog(`[agent] User selected reason: "${userReason}"`);
+    setSubmittedReason(userReason);
     setPhase("loading");
-    console.log("[agent] Posting to /api/check-in");
+    devLog("[agent] Posting to /api/check-in");
 
     const body = {
       userReason,
@@ -170,23 +221,24 @@ export default function EngagedModal({ onClose }: EngagedModalProps) {
         body: JSON.stringify(body),
       });
       const data: CheckInResponse = await res.json();
-      console.log(`[agent] Response received: branch=${data.branch}, hardship=${data.showHardshipResource}`);
+      devLog(`[agent] Response received: branch=${data.branch}, hardship=${data.showHardshipResource}`);
       setLastBranch(data.branch);
       setResponse(data);
       setPhase("response");
     } catch {
-      // API failed — fall back to dismissive per the route's contract
       const fallback: CheckInResponse = {
         branch: "dismissive",
         message: "The check-in didn't load. Your sale can proceed as normal — that's your call.",
         showHardshipResource: false,
       };
-      console.log("[agent] API call failed, using fallback");
+      devLog("[agent] API call failed, using fallback response");
       setLastBranch(fallback.branch);
       setResponse(fallback);
       setPhase("response");
     }
   }
+
+  // ── Event handlers ────────────────────────────────────────────────────
 
   function handleChipClick(chip: string) {
     if (chip === "Something else") {
@@ -204,33 +256,45 @@ export default function EngagedModal({ onClose }: EngagedModalProps) {
   }
 
   function handleDismissLink() {
-    // "Just let me sell" — routes through Claude as dismissive but counts as dismissal
+    // "Just let me sell" — routes through Claude as dismissive, counts as one dismissal.
+    // The log entry fires when the user makes their final choice in the response phase.
     incrementDismissal();
-    console.log(`[agent] Dismissal incremented to ${dismissalsThisSession + 1}`);
+    devLog(`[agent] Dismissal link clicked, count now: ${dismissalsThisSession + 1}`);
     submitReason("Just let me sell");
   }
 
   function handleProceedWithSale() {
-    // Not a dismissal — user completed the check-in
-    console.log("[agent] User selected: Proceed with sale");
+    // Not a dismissal — user completed the check-in.
+    if (response && submittedReason) {
+      appendDecision(buildLogEntry("proceeded", response, submittedReason));
+    }
+    devLog("[agent] User selected: Proceed with sale");
     onClose();
   }
 
   function handlePauseForNow() {
+    if (response && submittedReason) {
+      appendDecision(buildLogEntry("paused", response, submittedReason));
+    }
     incrementDismissal();
-    console.log(`[agent] User selected: Pause for now`);
-    console.log(`[agent] Dismissal incremented to ${dismissalsThisSession + 1}`);
+    devLog(`[agent] User selected: Pause for now`);
+    devLog(`[agent] Dismissal incremented to ${dismissalsThisSession + 1}`);
     onClose();
     router.push("/holding/canadian-equity-etf");
   }
 
   function handleXClose() {
+    // X close from articulation phase: no log (no response yet).
+    // X close from response phase (via backdrop): log as dismissed.
+    if (response && submittedReason) {
+      appendDecision(buildLogEntry("dismissed", response, submittedReason));
+    }
     incrementDismissal();
-    console.log(`[agent] Modal closed via X, dismissal incremented to ${dismissalsThisSession + 1}`);
+    devLog(`[agent] Modal closed via X/backdrop, dismissal count: ${dismissalsThisSession + 1}`);
     onClose();
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────
 
   return (
     <div
@@ -264,7 +328,6 @@ export default function EngagedModal({ onClose }: EngagedModalProps) {
         {/* ── Phase: articulation ── */}
         {phase === "articulation" && (
           <>
-            {/* X close + dismiss link row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <button
                 onClick={handleDismissLink}
@@ -291,7 +354,6 @@ export default function EngagedModal({ onClose }: EngagedModalProps) {
               </button>
             </div>
 
-            {/* Opening line */}
             <p
               style={{
                 fontFamily: "var(--font-fraunces), Georgia, serif",
@@ -306,16 +368,8 @@ export default function EngagedModal({ onClose }: EngagedModalProps) {
               Quick check — you're about to lock in a ${fmt(dollarLoss)} loss. What's prompting this?
             </p>
 
-            {/* Chip grid or custom input */}
             {!customMode ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  marginBottom: 4,
-                }}
-              >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 4 }}>
                 {CHIPS.map((chip) => (
                   <button
                     key={chip}
@@ -385,14 +439,7 @@ export default function EngagedModal({ onClose }: EngagedModalProps) {
 
         {/* ── Phase: loading ── */}
         {phase === "loading" && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "28px 0 20px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "28px 0 20px" }}>
             <PulsingDot />
             <span
               style={{
@@ -409,7 +456,6 @@ export default function EngagedModal({ onClose }: EngagedModalProps) {
         {/* ── Phase: response ── */}
         {phase === "response" && response && (
           <>
-            {/* Agent message */}
             <p
               style={{
                 fontFamily: "var(--font-geist), system-ui, sans-serif",
@@ -422,10 +468,8 @@ export default function EngagedModal({ onClose }: EngagedModalProps) {
               {response.message}
             </p>
 
-            {/* Hardship resource card */}
             {response.showHardshipResource && <HardshipCard />}
 
-            {/* Action buttons */}
             <div
               style={{
                 display: "flex",

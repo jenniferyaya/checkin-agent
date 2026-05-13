@@ -8,6 +8,7 @@ import { DEMO_PORTFOLIO, DEMO_USER } from "@/lib/demo-data";
 import PortfolioChart from "./PortfolioChart";
 import { useAgentContext } from "@/lib/agent-context";
 import AmbientIndicator from "@/components/AmbientIndicator";
+import AmbientBanner from "@/components/AmbientBanner";
 
 const TICKER_COLORS: Record<string, string> = {
   XIC:  "#2B4A3A",
@@ -84,24 +85,37 @@ export default function PortfolioPage() {
             </span>
             <AmbientIndicator />
           </span>
-          <span
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: "50%",
-              backgroundColor: "#1E1A16",
-              color: "#FFFFFF",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "var(--font-geist), system-ui, sans-serif",
-              fontSize: 14,
-              fontWeight: 500,
-              flexShrink: 0,
-            }}
-          >
-            {DEMO_USER.firstName[0]}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <Link
+              href="/decisions"
+              style={{
+                fontFamily: "var(--font-geist), system-ui, sans-serif",
+                fontSize: 13,
+                color: "#908B83",
+                textDecoration: "none",
+              }}
+            >
+              History
+            </Link>
+            <span
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: "50%",
+                backgroundColor: "#1E1A16",
+                color: "#FFFFFF",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "var(--font-geist), system-ui, sans-serif",
+                fontSize: 14,
+                fontWeight: 500,
+                flexShrink: 0,
+              }}
+            >
+              {DEMO_USER.firstName[0]}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -154,6 +168,7 @@ export default function PortfolioPage() {
             showArrow={true}
             size="md"
           />
+          <AmbientBanner />
         </div>
       </section>
 

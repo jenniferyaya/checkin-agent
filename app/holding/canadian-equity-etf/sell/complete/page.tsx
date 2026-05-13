@@ -57,7 +57,7 @@ export default async function SaleCompletePage({ searchParams }: CompletePagePro
           marginBottom: 12,
         }}
       >
-        Your sale is being processed
+        Sale submitted.
       </h1>
 
       <p
@@ -71,7 +71,7 @@ export default async function SaleCompletePage({ searchParams }: CompletePagePro
         }}
       >
         {qty} {qty === 1 ? "share" : "shares"} of {holding.ticker} ·{" "}
-        ${proceeds.toLocaleString("en-CA", { minimumFractionDigits: 2 })} estimated proceeds
+        ${proceeds.toLocaleString("en-CA", { minimumFractionDigits: 2 })} in proceeds
       </p>
 
       <p

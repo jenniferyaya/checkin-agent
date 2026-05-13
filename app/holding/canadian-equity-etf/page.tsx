@@ -8,6 +8,7 @@ import ChangeDisplay from "@/components/ChangeDisplay";
 import Button from "@/components/Button";
 import { DEMO_PORTFOLIO } from "@/lib/demo-data";
 import { useAgentContext } from "@/lib/agent-context";
+import AmbientBanner from "@/components/AmbientBanner";
 
 export default function HoldingDetailPage() {
   const { checkSellFlowAbort } = useAgentContext();
@@ -115,6 +116,7 @@ export default function HoldingDetailPage() {
             <ChangeDisplay pct={holding.weekChangePct} showArrow={true} size="md" />
           </div>
         </div>
+        <AmbientBanner />
       </section>
 
       {/* Stats row */}

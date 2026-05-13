@@ -11,8 +11,15 @@ import {
   useContext,
   useReducer,
   useCallback,
+  useState,
   type ReactNode,
 } from "react";
+import {
+  type DecisionLogEntry,
+  loadDecisions,
+  saveDecisions,
+  clearDecisionsStorage,
+} from "./decision-log";
 import {
   evaluateState,
   deriveGatingContext,
@@ -158,6 +165,7 @@ interface AgentContextValue {
   thresholds: typeof THRESHOLDS;
   dismissalsThisSession: number;
   lastBranch: string | null;
+  decisions: DecisionLogEntry[];
   // What screens call
   incrementDwell: () => void;
   markPortfolioVisit: () => void;
@@ -166,6 +174,8 @@ interface AgentContextValue {
   checkSellFlowAbort: () => void;
   incrementDismissal: () => void;
   setLastBranch: (branch: string) => void;
+  appendDecision: (entry: DecisionLogEntry) => void;
+  clearDecisions: () => void;
   reset: () => void;
 }
 
@@ -173,6 +183,10 @@ const AgentContext = createContext<AgentContextValue | null>(null);
 
 export function AgentProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, makeInitialState);
+
+  // Decision log — separate from the state machine reducer.
+  // Initialized from localStorage on mount; falls back to in-memory if unavailable.
+  const [decisions, setDecisions] = useState<DecisionLogEntry[]>(() => loadDecisions());
 
   const incrementDwell    = useCallback(() => dispatch({ type: "INCREMENT_DWELL" }), []);
   const markPortfolioVisit = useCallback(() => dispatch({ type: "MARK_PORTFOLIO_VISIT" }), []);
@@ -183,6 +197,17 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const incrementDismissal = useCallback(() => dispatch({ type: "INCREMENT_DISMISSAL" }), []);
   const setLastBranch     = useCallback((branch: string) =>
     dispatch({ type: "SET_LAST_BRANCH", branch }), []);
+  const appendDecision    = useCallback((entry: DecisionLogEntry) => {
+    setDecisions(prev => {
+      const next = [...prev, entry];
+      saveDecisions(next);
+      return next;
+    });
+  }, []);
+  const clearDecisions    = useCallback(() => {
+    clearDecisionsStorage();
+    setDecisions([]);
+  }, []);
   const reset             = useCallback(() => dispatch({ type: "RESET" }), []);
 
   return (
@@ -194,6 +219,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       thresholds: THRESHOLDS,
       dismissalsThisSession: state.dismissalsThisSession,
       lastBranch: state.lastBranch,
+      decisions,
       incrementDwell,
       markPortfolioVisit,
       markSellFlowEntry,
@@ -201,6 +227,8 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       checkSellFlowAbort,
       incrementDismissal,
       setLastBranch,
+      appendDecision,
+      clearDecisions,
       reset,
     }}>
       {children}

@@ -122,7 +122,7 @@ export default function SellForm({ shares, currentPrice, ticker }: SellFormProps
 
       {/* Settlement note */}
       <p style={{ fontFamily: "var(--font-geist), system-ui, sans-serif", fontSize: 13, color: "#908B83", lineHeight: 1.5, marginBottom: 32 }}>
-        Settlement in 2 business days. No commission fee.
+        Settles in 2 business days · no commission fee
       </p>
 
       {/* Actions */}

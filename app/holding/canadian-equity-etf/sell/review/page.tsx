@@ -60,7 +60,7 @@ function SellReviewContent() {
           Review your sale
         </h1>
         <p style={{ fontFamily: "var(--font-geist), system-ui, sans-serif", fontSize: 14, color: "#908B83" }}>
-          Confirm the details below before proceeding.
+          Confirm before this goes through.
         </p>
       </section>
 
@@ -130,7 +130,7 @@ function SellReviewContent() {
 
       {/* Settlement note */}
       <p style={{ padding: "12px 20px 0", fontFamily: "var(--font-geist), system-ui, sans-serif", fontSize: 13, color: "#908B83" }}>
-        Settlement in 2 business days. No commission fee.
+        Settles in 2 business days · no commission fee
       </p>
 
       {/* Actions */}
